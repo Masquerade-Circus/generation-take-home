@@ -135,8 +135,6 @@ export default class SemanticMaps extends Component {
           styles: this.props.styles
         });
 
-        this.infowindow = new google.maps.InfoWindow({content: ''});
-
 		this.addEvent(window, 'resize', () => {
 			this.map.panTo(new google.maps.LatLng(this.props.lat, this.props.lng));
 		});
@@ -149,20 +147,24 @@ export default class SemanticMaps extends Component {
 	}
 
 	updateMarkers(){
-		this.geocoder = this.geocoder || new google.maps.Geocoder();
-		for (let i in this.props.markers) {
-          let cmarker = this.props.markers[i],
-              lat = cmarker.lat,
-              lng = cmarker.lng,
-              icon = cmarker.icon,
-              title = cmarker.title,
-              content = cmarker.html,
-              callback = cmarker.callback,
-              open = cmarker.open || false,
-			  address = cmarker.address;
+		this.marker = [];
+		if (typeof google === 'object' && typeof google.maps === 'object' && this.semanticMapsActive) {
+			this.geocoder = this.geocoder || new google.maps.Geocoder();
+			for (let i in this.props.markers) {
+	          let cmarker = this.props.markers[i],
+	              lat = cmarker.lat,
+	              lng = cmarker.lng,
+	              icon = cmarker.icon,
+	              title = cmarker.title,
+	              content = cmarker.html,
+	              callback = cmarker.callback,
+	              open = cmarker.open || false,
+				  address = cmarker.address;
 
-			this.addMarker(address, lat, lng, icon, title, content, callback, open);
-        }
+				this.addMarker(address, lat, lng, icon, title, content, callback, open);
+	        }
+		}
+
 	}
 
 	addSearchBox() {
@@ -279,6 +281,7 @@ export default class SemanticMaps extends Component {
 	}
 
 	addInfoMarker(marker, content, callback, open) {
+		this.infowindow = this.infowindow || new google.maps.InfoWindow({content: ''});
 	  google.maps.event.addListener(marker, 'click', function() {
 		this.map.setCenter(marker.getPosition());
 		if (content && content.big && content.trim().length > 0) {

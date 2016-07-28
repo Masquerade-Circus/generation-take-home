@@ -20,7 +20,6 @@ export default class YourComponent extends Component {
 			for (let i in data) {
 				data[i].address= data[i].Address;
 				data[i].title= data[i].Name;
-				data[i].content= data[i].Name;
 			}
 			this.data = data;
 			this.forceUpdate();
