@@ -66,10 +66,6 @@ export default class SemanticMaps extends Component {
 		this.loadGoogle();
 	}
 
-	componentDidUpdate(){
-		this.updateMarkers();
-	}
-
 	configureStyle(){
 		if (this.props.landscape != []._) this.props.styles.push({
 		  "featureType": "landscape",
@@ -265,7 +261,7 @@ export default class SemanticMaps extends Component {
 					lng = results[0].geometry.location.lng();
 					marker.position = new google.maps.LatLng(lat, lng);
 					let i = this.marker.push(new google.maps.Marker(marker));
-					this.addInfoMarker(this.marker[i - 1], content, callback, open);
+					this.addInfoMarker(this.marker[i - 1], content, callback, open, marker);
 
 					return;
 				}
@@ -277,22 +273,24 @@ export default class SemanticMaps extends Component {
 
 		marker.position = new google.maps.LatLng(lat, lng);
 		let i = this.marker.push(new google.maps.Marker(marker));
-		this.addInfoMarker(this.marker[i - 1], content, callback, open);
+		this.addInfoMarker(this.marker[i - 1], content, callback, open, marker);
 	}
 
-	addInfoMarker(marker, content, callback, open) {
+	addInfoMarker(marker, content, callback, open, data) {
 		this.infowindow = this.infowindow || new google.maps.InfoWindow({content: ''});
+		let _this = this;
 	  google.maps.event.addListener(marker, 'click', function() {
-		this.map.setCenter(marker.getPosition());
+		  console.log('hola', _this.infowindow);
+		_this.map.setCenter(marker.getPosition());
+
 		if (content && content.big && content.trim().length > 0) {
-		  this.infowindow.open(map, marker);
-		  this.infowindow.setContent(content);
+		  _this.infowindow.open(_this.map, marker);
+		  _this.infowindow.setContent(content);
 		}
 
-		if (callback && callback.call) {
-		  var func = new Function('marker', 'infowindow', callback);
-		  func.call(this.map, marker, this.infowindow);
-		}
+		if (callback && callback.call)
+		  callback(_this.map, marker, data, _this.infowindow);
+
 	  });
 
 	  if (open)
