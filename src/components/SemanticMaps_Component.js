@@ -1,3 +1,5 @@
+import React, { Component } from 'react';
+
 /**
  * SemanticMaps component
  * @author Christian César Robledo López christian@masquerade-circus.net
@@ -25,7 +27,6 @@
     Configure for install with npm
  */
 
-import React, { Component } from 'react';
 export default class SemanticMaps extends Component {
     static defaultProps = {
         apiKey: '',
@@ -39,7 +40,6 @@ export default class SemanticMaps extends Component {
         text: '32281E',
         poi: 'F4F3EB',
         markers: [],
-        searchBox: false,
         styles: []
     };
 
@@ -51,7 +51,7 @@ export default class SemanticMaps extends Component {
 
     componentDidMount() {
         window.googlemapsloaded = () => {
-          this.semanticMapsActive = true;
+            this.semanticMapsActive = true;
         };
         this.container = document.getElementById(this.props.id);
 
@@ -68,68 +68,71 @@ export default class SemanticMaps extends Component {
 
     configureStyle(){
         if (this.props.landscape != []._) this.props.styles.push({
-          "featureType": "landscape",
-          "stylers": [{
-            "color": "#" + this.props.landscape
-          }]
+            "featureType": "landscape",
+            "stylers": [{
+                "color": "#" + this.props.landscape
+            }]
         });
         if (this.props.road != []._) this.props.styles.push({
-          "featureType": "road",
-          "stylers": [{
-            "color": "#" + this.props.road
-          }]
+            "featureType": "road",
+            "stylers": [{
+                "color": "#" + this.props.road
+            }]
         });
         if (this.props.water != []._) this.props.styles.push({
-          "featureType": "water",
-          "stylers": [{
-            "color": "#" + this.props.water
-          }]
+            "featureType": "water",
+            "stylers": [{
+                "color": "#" + this.props.water
+            }]
         });
         if (this.props.text != []._) this.props.styles.push({
-          "elementType": "labels.text",
-          "stylers": [{
-            "saturation": 1
-          }, {
-            "weight": 0.4
-          }, {
-            "color": "#" + this.props.text
-          }]
+            "elementType": "labels.text",
+            "stylers": [{
+                    "saturation": 1
+                }, {
+                    "weight": 0.4
+                }, {
+                    "color": "#" + this.props.text
+            }]
         });
         if (this.props.poi != []._) this.props.styles.push({
-          "featureType": "poi",
-          "elementType": "geometry",
-          "stylers": [{
-            "color": "#" + this.props.poi
-          }]
+            "featureType": "poi",
+            "elementType": "geometry",
+            "stylers": [{
+                "color": "#" + this.props.poi
+            }]
         });
     }
 
     loadGoogle() {
-      var script = document.createElement("script");
+        let script = document.createElement("script"),
+            key = this.props.apiKey.trim().length > 0 ? ("&key="+this.props.apiKey) : '',
+            s;
 
-      var key = this.props.apiKey.trim().length > 0 ? ("&key="+this.props.apiKey) : '';
-      script.type = "text/javascript";
-      script.src = "http://maps.googleapis.com/maps/api/js?callback=googlemapsloaded&libraries=places"+key;
-      var s = document.getElementsByTagName('script')[0];
-      s.parentNode.insertBefore(script, s);
-      this.initSemanticMaps();
+        script.type = "text/javascript";
+        script.src = "http://maps.googleapis.com/maps/api/js?callback=googlemapsloaded&libraries=places"+key;
+        s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(script, s);
+        this.initSemanticMaps();
     }
 
     initSemanticMaps() {
         if (typeof google !== 'object' || typeof google.maps !== 'object' || !this.semanticMapsActive) {
-            let _this = this;
-            setTimeout(function() {
-                _this.initSemanticMaps();
+            setTimeout(() => {
+                this.initSemanticMaps();
             }, 100);
             return;
         }
 
         this.map = new google.maps.Map(this.container, {
-          center: new google.maps.LatLng(this.props.lat, this.props.lng),
-          zoom: +this.props.zoom,
-          mapTypeId: google.maps.MapTypeId.ROADMAP,
-          styles: this.props.styles
+            center: new google.maps.LatLng(this.props.lat, this.props.lng),
+            zoom: +this.props.zoom,
+            mapTypeId: google.maps.MapTypeId.ROADMAP,
+            styles: this.props.styles
         });
+
+        this.geocoder = this.geocoder || new google.maps.Geocoder();
+        this.geoCodeAll(this.props.markers);
 
         this.addEvent(window, 'resize', () => {
             this.map.panTo(new google.maps.LatLng(this.props.lat, this.props.lng));
@@ -139,26 +142,14 @@ export default class SemanticMaps extends Component {
     }
 
     updateMarkers(){
+        this.clearMarkers();
         this.marker = [];
-        if (typeof google === 'object' && typeof google.maps === 'object' && this.semanticMapsActive) {
-            this.geocoder = this.geocoder || new google.maps.Geocoder();
-            console.log(this.props.markers.length);
-            this.geoCodeAll(this.props.markers);
-            // for (let i in this.props.markers) {
-            //     let currentMarker = this.props.markers[i],
-            //         lat = currentMarker.lat,
-            //         lng = currentMarker.lng,
-            //         icon = currentMarker.icon,
-            //         title = currentMarker.title,
-            //         content = currentMarker.content,
-            //         callback = currentMarker.callback,
-            //         open = currentMarker.open || false,
-            //         address = currentMarker.address;
-            //
-            //     this.addMarker(currentMarker);
-            // }
-        }
+        this.props.markers.map(marker => this.addMarker(marker));
+    }
 
+    clearMarkers(){
+        this.marker = this.marker || [];
+        this.marker.map(marker => marker.setMap(null));
     }
 
     geoCode(currentMarker){
@@ -181,8 +172,6 @@ export default class SemanticMaps extends Component {
                     return;
                 }
 
-                console.log(currentMarker.address);
-                console.warn('Direction could not be resolved: ' + status);
                 resolve();
             });
         });
@@ -197,7 +186,8 @@ export default class SemanticMaps extends Component {
             this.geoCode(markers[i])
                 .then(() => {
                     i++;
-                    console.log(i);
+                    this.addMarker(markers[i]);
+                    this.props.onUpdate && this.props.onUpdate.call && this.props.onUpdate(markers);
                     resolve(this.geoCodeAll(markers,i));
                 });
         });
@@ -223,77 +213,47 @@ export default class SemanticMaps extends Component {
         return inLat && inLong;
     }
 
-    /*Markers*/
-    addMarker(address, lat, lng, icon, title, content, callback, open) {
-        return new Promise((resolve, reject) => {
+    addMarker(currentMarker) {
+        if (currentMarker !== undefined && currentMarker.lat !== undefined && currentMarker.lng !== undefined){
             let marker = {
                   map: this.map,
                   optimized: false,
-                //   animation: google.maps.Animation.DROP
             };
 
-            marker.icon = icon || true;
-            // marker.title = title || '';
+            marker.icon = currentMarker.icon || true;
 
             let bounds = this.map.getBounds();
 
-            if( address !== undefined ){
-                this.geocoder.geocode( { address: address, bounds: bounds}, (results, status) => {
-                    if (status == google.maps.GeocoderStatus.OK) {
-                        lat = results[0].geometry.location.lat();
-                        lng = results[0].geometry.location.lng();
-                        console.log(this.inBounds(lat, lng), this.marker.length);
-                        if (this.inBounds(lat, lng)){
-                            marker.position = new google.maps.LatLng(lat, lng);
-                            let i = this.marker.push(new google.maps.Marker(marker));
-                            this.addInfoMarker(this.marker[i - 1], content, callback, open, marker);
-                        }
-
-                        return resolve();
-                    }
-
-                    if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
-                        setTimeout(() => {
-                            resolve(this.addMarker(address, lat, lng, icon, content, callback, open));
-                        },1020);
-                        return;
-                    }
-
-                    console.log(address);
-                    console.warn('Direction could not be resolved: ' + status);
-                });
-                return;
+            if (this.inBounds(currentMarker.lat, currentMarker.lng)){
+                marker.position = new google.maps.LatLng(currentMarker.lat, currentMarker.lng);
+                let i = this.marker.push(new google.maps.Marker(marker));
+                this.addInfoMarker(this.marker[i - 1], currentMarker.content, currentMarker.callback, currentMarker.open, currentMarker);
             }
-
-            marker.position = new google.maps.LatLng(lat, lng);
-            let i = this.marker.push(new google.maps.Marker(marker));
-            this.addInfoMarker(this.marker[i - 1], content, callback, open, marker);
-            resolve();
-        });
-
+        }
     }
 
     addInfoMarker(marker, content, callback, open, data) {
         this.infowindow = this.infowindow || new google.maps.InfoWindow({content: ''});
-        let _this = this;
-      google.maps.event.addListener(marker, 'click', function() {
-        // _this.map.setCenter(marker.getPosition());
+        google.maps.event.addListener(marker, 'click', () => {
 
-        if (content && content.big && content.trim().length > 0) {
-          _this.infowindow.open(_this.map, marker);
-          _this.infowindow.setContent(content);
+            if (content && content.big && content.trim().length > 0) {
+              this.infowindow.open(this.map, marker);
+              this.infowindow.setContent(content);
+            }
+
+            if (callback && callback.call){
+                callback(this.map, marker, data, this.infowindow);
+                data.icon = marker.icon;
+            }
+        });
+
+        if (open) {
+            new google.maps.event.trigger(marker, 'click');
         }
 
-        if (callback && callback.call)
-          callback(_this.map, marker, data, _this.infowindow);
-
-      });
-
-      if (open)
-          new google.maps.event.trigger(marker, 'click');
     }
 
-    addEvent = function(element, type, callback) {
+    addEvent(element, type, callback) {
         if (element == null || typeof(object) == 'undefined')
             return;
 
