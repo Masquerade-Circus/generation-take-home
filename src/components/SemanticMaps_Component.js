@@ -45,65 +45,123 @@ export default class SemanticMaps extends Component {
 
     constructor(props){
         super(props);
+        /**
+         * The property where the real markers will be stored
+         * @type {Array}
+         */
         this.marker = [];
+        /**
+         * This property will be updated when google maps is ready to be instantiated
+         * @type {Boolean}
+         */
         this.semanticMapsActive = false;
     }
 
     componentDidMount() {
+        /**
+         * Set the callback for when the google maps api is ready
+         * When this function is called, set the semanticMapsActive variable to true
+         * @method googlemapsloaded
+         * @return {Void}
+         */
         window.googlemapsloaded = () => {
             this.semanticMapsActive = true;
         };
+        /**
+         * Gets the div container in which render the map
+         * @type {DOMElement}
+         */
         this.container = document.getElementById(this.props.id);
 
+        /**
+         * Configure the styles of the map
+         * @type {Method}
+         */
         this.configureStyle();
 
+        /**
+         * If google maps api its already loaded
+         * put the semanticMapsActive variable to true
+         * and initialize the map.
+         * @method if
+         * @return {Void}
+         */
         if (typeof google === 'object') {
             this.semanticMapsActive = true;
             this.initSemanticMaps();
             return;
         }
 
+        /**
+         * If google maps api isn't loaded,
+         * try to load it
+         */
         this.loadGoogle();
     }
 
+    /**
+     * This method will configure the styles to render the map based on the properties passed on the component
+     * @method configureStyle
+     * @return {Void}
+     */
     configureStyle(){
-        if (this.props.landscape != []._) this.props.styles.push({
-            'featureType': 'landscape',
-            'stylers': [{
-                'color': '#' + this.props.landscape
-            }]
-        });
-        if (this.props.road != []._) this.props.styles.push({
-            'featureType': 'road',
-            'stylers': [{
-                'color': '#' + this.props.road
-            }]
-        });
-        if (this.props.water != []._) this.props.styles.push({
-            'featureType': 'water',
-            'stylers': [{
-                'color': '#' + this.props.water
-            }]
-        });
-        if (this.props.text != []._) this.props.styles.push({
-            'elementType': 'labels.text',
-            'stylers': [{
-                    'saturation': 1
-                }, {
-                    'weight': 0.4
-                }, {
-                    'color': '#' + this.props.text
-            }]
-        });
-        if (this.props.poi != []._) this.props.styles.push({
-            'featureType': 'poi',
-            'elementType': 'geometry',
-            'stylers': [{
-                'color': '#' + this.props.poi
-            }]
-        });
+        if (this.props.landscape !== undefined){
+            this.props.styles.push({
+                'featureType': 'landscape',
+                'stylers': [{
+                    'color': '#' + this.props.landscape
+                }]
+            });
+        }
+
+        if (this.props.road !== undefined) {
+            this.props.styles.push({
+                'featureType': 'road',
+                'stylers': [{
+                    'color': '#' + this.props.road
+                }]
+            });
+        }
+
+        if (this.props.water !== undefined) {
+            this.props.styles.push({
+                'featureType': 'water',
+                'stylers': [{
+                    'color': '#' + this.props.water
+                }]
+            });
+        }
+
+        if (this.props.text !== undefined) {
+            this.props.styles.push({
+                'elementType': 'labels.text',
+                'stylers': [{
+                        'saturation': 1
+                    }, {
+                        'weight': 0.4
+                    }, {
+                        'color': '#' + this.props.text
+                }]
+            });
+        }
+
+        if (this.props.poi !== undefined) {
+            this.props.styles.push({
+                'featureType': 'poi',
+                'elementType': 'geometry',
+                'stylers': [{
+                    'color': '#' + this.props.poi
+                }]
+            });
+        }
     }
 
+    /**
+     * This method creates the script to load the google maps api
+     * and appends it to the head, then initialize the listener for the map
+     * @method loadGoogle
+     * @return {Void}
+     */
     loadGoogle() {
         let script = document.createElement('script'),
             key = this.props.apiKey.trim().length > 0 ? ('&key='+this.props.apiKey) : '',
@@ -113,9 +171,17 @@ export default class SemanticMaps extends Component {
         script.src = 'http://maps.googleapis.com/maps/api/js?callback=googlemapsloaded&libraries=places'+key;
         s = document.getElementsByTagName('script')[0];
         s.parentNode.insertBefore(script, s);
+
         this.initSemanticMaps();
     }
 
+    /**
+     * This method checks if google maps api is fully loaded and ready,
+     * if it's not, try to chack it again every 100 milliseconds,
+     * and if it's ready, initialize the map
+     * @method initSemanticMaps
+     * @return {Void}
+     */
     initSemanticMaps() {
         if (typeof google !== 'object' || typeof google.maps !== 'object' || !this.semanticMapsActive) {
             setTimeout(() => {
@@ -124,6 +190,10 @@ export default class SemanticMaps extends Component {
             return;
         }
 
+        /**
+         * Instantiate a new map
+         * @type {google}
+         */
         this.map = new google.maps.Map(this.container, {
             center: new google.maps.LatLng(this.props.lat, this.props.lng),
             zoom: +this.props.zoom,
@@ -131,27 +201,68 @@ export default class SemanticMaps extends Component {
             styles: this.props.styles
         });
 
-        this.geocoder = this.geocoder || new google.maps.Geocoder();
+        /**
+         * Creates a new geocoder instance
+         * @type {google.maps.Geocoder}
+         */
+        this.geocoder = new google.maps.Geocoder();
+
+        /**
+         * Start to geocode all the markers that does not have a lat and a lng property defined
+         * @param {Array} this.props.markers    The array of markers obtained from the property of the component
+         */
         this.geoCodeAll(this.props.markers);
 
+        /**
+         * When the window rezise pans to the center of the map
+         */
         this.addEvent(window, 'resize', () => {
             this.map.panTo(new google.maps.LatLng(this.props.lat, this.props.lng));
         });
 
+        /**
+         * Every time the map change its bounds
+         * update the visible markers
+         * @type {Array}
+         */
         google.maps.event.addListener( this.map, 'idle', () => this.updateMarkers());
     }
 
+    /**
+     * This method will updtate the visible markers that are within the map bounds
+     * @method updateMarkers
+     * @return {Void}
+     */
     updateMarkers(){
+        // First delete all the map markers
         this.clearMarkers();
+        // Set the marker property to an empty array
         this.marker = [];
+        // For each marker in the data, try to add it to the map
         this.props.markers.map(marker => this.addMarker(marker));
     }
 
+    /**
+     * This method will delete all the current markers
+     * @method clearMarkers
+     * @return {Void}
+     */
     clearMarkers(){
+        // try to initialize the marker property to an empty array if its not initialized already
         this.marker = this.marker || [];
+        // For each marker, set its map to null to delete it
         this.marker.map(marker => marker.setMap(null));
     }
 
+    /**
+     * This method will try to geocode a marker until its fully geocoded
+     * If it's an over query limit, it will try to geocode it again within a second
+     * If the passed object already have a lat and a lng property setted, then
+     * resolves mmediately
+     * @method geoCode
+     * @param  {Object} currentMarker   The object with the properties to geocode
+     * @return {Promise}                Promise that resolves when the marker is fully geocoded
+     */
     geoCode(currentMarker){
         return new Promise((resolve, reject) => {
             if (currentMarker.lat !== undefined && currentMarker.lng !== undefined){
@@ -177,6 +288,15 @@ export default class SemanticMaps extends Component {
         });
     }
 
+    /**
+     * This method will try to geocode all the markers one by one
+     * When a marker is fully geocoded it tries to add it to the map
+     * and call the onUpdate passed method if any
+     * @method geoCodeAll
+     * @param  {Array}    [markers=[]]      The marker objects that will be geocodded
+     * @param  {Number}   [i=0]             Current index of the marker that its currently geocoding
+     * @return {Promise}                    Promise that resolves when all the markers are fully geocoded
+     */
     geoCodeAll(markers = [], i = 0){
         return new Promise((resolve, reject) => {
             if(i >= markers.length){
@@ -194,6 +314,13 @@ export default class SemanticMaps extends Component {
 
     }
 
+    /**
+     * This method checks if the lat and lng passed are within the bounds of the map
+     * @method inBounds
+     * @param  {Float} lat
+     * @param  {Float} lng
+     * @return {Boolean}
+     */
     inBounds(lat, lng) {
         let bounds = this.map.getBounds(),
             ne = bounds.getNorthEast().toJSON(),
@@ -213,25 +340,47 @@ export default class SemanticMaps extends Component {
         return inLat && inLong;
     }
 
+    /**
+     * This method try to add a marker to the map
+     * @method addMarker
+     * @param  {Object}  currentMarker      Object with the properties of the marker that will be added
+     */
     addMarker(currentMarker) {
+        /**
+         * Process only markers that have the lat and lng properties setted
+         * @method if
+         * @param  {Object} currentMarker   Object with the properties of the marker that will be added
+         * @return {Void}
+         */
         if (currentMarker !== undefined && currentMarker.lat !== undefined && currentMarker.lng !== undefined){
-            let marker = {
+            let markerOptions = {
                   map: this.map,
                   optimized: false,
             };
 
-            marker.icon = currentMarker.icon || true;
+            markerOptions.icon = currentMarker.icon || true;
 
-            let bounds = this.map.getBounds();
-
+            /**
+             * If the marker is within the bounds of the map add it to the map
+             * @method if
+             */
             if (this.inBounds(currentMarker.lat, currentMarker.lng)){
-                marker.position = new google.maps.LatLng(currentMarker.lat, currentMarker.lng);
-                let i = this.marker.push(new google.maps.Marker(marker));
+                markerOptions.position = new google.maps.LatLng(currentMarker.lat, currentMarker.lng);
+                let i = this.marker.push(new google.maps.Marker(markerOptions));
                 this.addInfoMarker(this.marker[i - 1], currentMarker.content, currentMarker.callback, currentMarker.open, currentMarker);
             }
         }
     }
 
+    /**
+     * Creates a new info window and adds the callback to the marker if any
+     * @method addInfoMarker
+     * @param  {google.maps.Marker}      marker
+     * @param  {String}      content                The content to show on the info window
+     * @param  {Function}    callback               Method that will be called when the user clicks on the marker
+     * @param  {Boolean}      open                  If the infowindow must be open from the start
+     * @param  {Object}      data                   Additional data that will be passed to the callback when called
+     */
     addInfoMarker(marker, content, callback, open, data) {
         this.infowindow = this.infowindow || new google.maps.InfoWindow({content: ''});
         google.maps.event.addListener(marker, 'click', () => {
@@ -253,20 +402,30 @@ export default class SemanticMaps extends Component {
 
     }
 
+    /**
+     * CrossBrowser Event pollyfill
+     * @method addEvent
+     * @param  {DOMElement}   element
+     * @param  {String}   type          Type of event that will be attached
+     * @param  {Function} callback      Handler of the event
+     */
     addEvent(element, type, callback) {
         if (element == null || typeof(object) == 'undefined')
             return;
 
+        // If other than Msie
         if (element.addEventListener) {
             element.addEventListener(type, callback, false);
             return;
         }
 
+        // If Msie
         if (element.attachEvent) {
             element.attachEvent('on' + type, callback);
             return;
         }
 
+        // Fallback to on[event] method
         element['on'+type] = callback;
     }
 
