@@ -10,7 +10,7 @@ import React, { Component } from 'react';
 import SemanticMaps from './SemanticMaps_Component';
 /**
  * This Method will handle the session
- * so that when the user comes back, he's favorite stores will be updated
+ * so that when the user comes back, the saved favorite stores will be updated
  * @type {Function}
  */
 import Session from '../third-party/session';
@@ -38,7 +38,7 @@ class App extends Component {
 
         /**
          * Get initial data
-         * @type {[type]}
+         * @type {Method}
          */
         this.getData()
             .then(() => {
