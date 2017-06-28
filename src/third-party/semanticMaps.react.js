@@ -135,152 +135,149 @@ export default class SemanticMaps extends Component {
             this.map.panTo(new google.maps.LatLng(this.props.lat, this.props.lng));
         });
 
-        this.updateMarkers();
-
-        if (this.props.searchBox != false)
-            this.addSearchBox(google);
-
+        google.maps.event.addListener( this.map, 'idle', () => this.updateMarkers());
     }
 
     updateMarkers(){
         this.marker = [];
         if (typeof google === 'object' && typeof google.maps === 'object' && this.semanticMapsActive) {
             this.geocoder = this.geocoder || new google.maps.Geocoder();
-            for (let i in this.props.markers) {
-              let cmarker = this.props.markers[i],
-                  lat = cmarker.lat,
-                  lng = cmarker.lng,
-                  icon = cmarker.icon,
-                  title = cmarker.title,
-                  content = cmarker.html,
-                  callback = cmarker.callback,
-                  open = cmarker.open || false,
-                  address = cmarker.address;
-
-                this.addMarker(address, lat, lng, icon, title, content, callback, open);
-            }
+            console.log(this.props.markers.length);
+            this.geoCodeAll(this.props.markers);
+            // for (let i in this.props.markers) {
+            //     let currentMarker = this.props.markers[i],
+            //         lat = currentMarker.lat,
+            //         lng = currentMarker.lng,
+            //         icon = currentMarker.icon,
+            //         title = currentMarker.title,
+            //         content = currentMarker.content,
+            //         callback = currentMarker.callback,
+            //         open = currentMarker.open || false,
+            //         address = currentMarker.address;
+            //
+            //     this.addMarker(currentMarker);
+            // }
         }
 
     }
 
-    addSearchBox() {
-      // Create the search box and link it to the UI element.
-      var input = React.createElement('input', {
-              id: 'pac-input',
-              className: 'form-control',
-              type: 'text',
-              placeholder: 'Buscar en los alrededores',
-              style : 'max-width: 50%'
-          }),
-          searchBox,
-          markers = []
-          places = searchBox.getPlaces(),
-          bounds,
-          place_marker,
-          place;
+    geoCode(currentMarker){
+        return new Promise((resolve, reject) => {
+            if (currentMarker.lat !== undefined && currentMarker.lng !== undefined){
+                return resolve();
+            }
+            this.geocoder.geocode( { address: currentMarker.address}, (results, status) => {
+                if (status == google.maps.GeocoderStatus.OK) {
+                    currentMarker.lat = results[0].geometry.location.lat();
+                    currentMarker.lng = results[0].geometry.location.lng();
 
-      this.map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
-      searchBox = new google.maps.places.SearchBox(input);
+                    return resolve();
+                }
 
-      google.maps.event.addListener(searchBox, 'places_changed', () => {
-        places = searchBox.getPlaces();
+                if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+                    setTimeout(() => {
+                        resolve(this.geoCode(currentMarker));
+                    },1020);
+                    return;
+                }
 
-        if (places.length > 0) {
-          for (let i = 0; place_marker = markers[i]; i++)
-              place_marker.setMap(null);
+                console.log(currentMarker.address);
+                console.warn('Direction could not be resolved: ' + status);
+                resolve();
+            });
+        });
+    }
 
-          markers = [];
-          bounds = new google.maps.LatLngBounds();
-
-          for (let i = 0; place = places[i]; i++) {
-            let options = {
-              map: this.map,
-              title: place.name,
-              animation: google.maps.Animation.DROP,
-              position: place.geometry.location
+    geoCodeAll(markers = [], i = 0){
+        return new Promise((resolve, reject) => {
+            if(i >= markers.length){
+                return resolve();
             }
 
-            if (place.photos)
-                this.props.icon = place.photos[0].getUrl({
-                  'maxWidth': 35,
-                  'maxHeight': 35
+            this.geoCode(markers[i])
+                .then(() => {
+                    i++;
+                    console.log(i);
+                    resolve(this.geoCodeAll(markers,i));
                 });
+        });
 
-            place_marker = new google.maps.Marker(options); // Create a marker for each place.
-            markers.push(place_marker);
-            bounds.extend(options.position);
+    }
 
-            let contenido = '';
-            if (place.photos)
-                contenido += '<img src="' + place.photos[0].getUrl({
-                  'maxWidth': 150,
-                  'maxHeight': 100
-                }) + '" style="display: block; float: left; margin: 0 1em 1em 0">';
+    inBounds(lat, lng) {
+        let bounds = this.map.getBounds(),
+            ne = bounds.getNorthEast().toJSON(),
+            sw = bounds.getSouthWest().toJSON(),
+            eastBound = lng < ne.lng,
+            westBound = lng > sw.lng,
+            inLong,
+            inLat;
 
-            contenido += '<b>Nombre:</b> ' + place.name + '<br><b>Dirección:</b> ' + place.formatted_address + '<br>';
-
-            if (place.types && place.types.length > 0) contenido += '<b>Tipo de establecimiento:</b> ' + place.types.join(',') + '<br>';
-            if (place.website) contenido += '<b>Sitio web:</b> ' + place.website + '<br>';
-            if (place.formatted_phone_number) contenido += '<b>Teléfono:</b> ' + place.formatted_phone_number + '<br>';
-            if (place.opening_hours) {
-              contenido += '<b>Horarios:</b> ' + place.opening_hours.weekday_text.join(', ') + '<br>';
-              contenido += '<b>Abierto ahora:</b> ' + (place.opening_hours.open_now ? 'Sí' : 'No') + '<br>'
-            };
-            if (place.rating) contenido += '<b>Rating:</b> ' + place.rating + '<br>';
-
-            this.addInfoMarker(place_marker, contenido);
-          }
-
-          for (i in marker)
-              bounds.extend(marker[i].position);
-
-          this.map.fitBounds(bounds);
+        if (ne.lng < sw.lng) {
+            inLong = eastBound || westBound;
+        } else {
+            inLong = eastBound && westBound;
         }
-      });
 
-      google.maps.event.addListener(this.map, 'bounds_changed', () => {
-        searchBox.setBounds(this.map.getBounds());
-      });
+        inLat = lat > sw.lat && lat < ne.lat;
+        return inLat && inLong;
     }
 
     /*Markers*/
     addMarker(address, lat, lng, icon, title, content, callback, open) {
-        let marker = {
-              map: this.map,
-              optimized: false,
-              animation: google.maps.Animation.DROP
-        };
+        return new Promise((resolve, reject) => {
+            let marker = {
+                  map: this.map,
+                  optimized: false,
+                //   animation: google.maps.Animation.DROP
+            };
 
-        icon !== undefined && (marker.icon = icon);
-        title !== undefined && (marker.title = title);
+            marker.icon = icon || true;
+            // marker.title = title || '';
 
-        if( address !== undefined ){
-            this.geocoder.geocode( { 'address': address}, (results, status) => {
-                if (status == google.maps.GeocoderStatus.OK) {
-                    lat = results[0].geometry.location.lat();
-                    lng = results[0].geometry.location.lng();
-                    marker.position = new google.maps.LatLng(lat, lng);
-                    let i = this.marker.push(new google.maps.Marker(marker));
-                    this.addInfoMarker(this.marker[i - 1], content, callback, open, marker);
+            let bounds = this.map.getBounds();
 
-                    return;
-                }
+            if( address !== undefined ){
+                this.geocoder.geocode( { address: address, bounds: bounds}, (results, status) => {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                        lat = results[0].geometry.location.lat();
+                        lng = results[0].geometry.location.lng();
+                        console.log(this.inBounds(lat, lng), this.marker.length);
+                        if (this.inBounds(lat, lng)){
+                            marker.position = new google.maps.LatLng(lat, lng);
+                            let i = this.marker.push(new google.maps.Marker(marker));
+                            this.addInfoMarker(this.marker[i - 1], content, callback, open, marker);
+                        }
 
-                console.warn('Direction could not be resolved: ' + status);
-            });
-            return;
-        }
+                        return resolve();
+                    }
 
-        marker.position = new google.maps.LatLng(lat, lng);
-        let i = this.marker.push(new google.maps.Marker(marker));
-        this.addInfoMarker(this.marker[i - 1], content, callback, open, marker);
+                    if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+                        setTimeout(() => {
+                            resolve(this.addMarker(address, lat, lng, icon, content, callback, open));
+                        },1020);
+                        return;
+                    }
+
+                    console.log(address);
+                    console.warn('Direction could not be resolved: ' + status);
+                });
+                return;
+            }
+
+            marker.position = new google.maps.LatLng(lat, lng);
+            let i = this.marker.push(new google.maps.Marker(marker));
+            this.addInfoMarker(this.marker[i - 1], content, callback, open, marker);
+            resolve();
+        });
+
     }
 
     addInfoMarker(marker, content, callback, open, data) {
         this.infowindow = this.infowindow || new google.maps.InfoWindow({content: ''});
         let _this = this;
       google.maps.event.addListener(marker, 'click', function() {
-        _this.map.setCenter(marker.getPosition());
+        // _this.map.setCenter(marker.getPosition());
 
         if (content && content.big && content.trim().length > 0) {
           _this.infowindow.open(_this.map, marker);
