@@ -68,49 +68,49 @@ export default class SemanticMaps extends Component {
 
     configureStyle(){
         if (this.props.landscape != []._) this.props.styles.push({
-            "featureType": "landscape",
-            "stylers": [{
-                "color": "#" + this.props.landscape
+            'featureType': 'landscape',
+            'stylers': [{
+                'color': '#' + this.props.landscape
             }]
         });
         if (this.props.road != []._) this.props.styles.push({
-            "featureType": "road",
-            "stylers": [{
-                "color": "#" + this.props.road
+            'featureType': 'road',
+            'stylers': [{
+                'color': '#' + this.props.road
             }]
         });
         if (this.props.water != []._) this.props.styles.push({
-            "featureType": "water",
-            "stylers": [{
-                "color": "#" + this.props.water
+            'featureType': 'water',
+            'stylers': [{
+                'color': '#' + this.props.water
             }]
         });
         if (this.props.text != []._) this.props.styles.push({
-            "elementType": "labels.text",
-            "stylers": [{
-                    "saturation": 1
+            'elementType': 'labels.text',
+            'stylers': [{
+                    'saturation': 1
                 }, {
-                    "weight": 0.4
+                    'weight': 0.4
                 }, {
-                    "color": "#" + this.props.text
+                    'color': '#' + this.props.text
             }]
         });
         if (this.props.poi != []._) this.props.styles.push({
-            "featureType": "poi",
-            "elementType": "geometry",
-            "stylers": [{
-                "color": "#" + this.props.poi
+            'featureType': 'poi',
+            'elementType': 'geometry',
+            'stylers': [{
+                'color': '#' + this.props.poi
             }]
         });
     }
 
     loadGoogle() {
-        let script = document.createElement("script"),
-            key = this.props.apiKey.trim().length > 0 ? ("&key="+this.props.apiKey) : '',
+        let script = document.createElement('script'),
+            key = this.props.apiKey.trim().length > 0 ? ('&key='+this.props.apiKey) : '',
             s;
 
-        script.type = "text/javascript";
-        script.src = "http://maps.googleapis.com/maps/api/js?callback=googlemapsloaded&libraries=places"+key;
+        script.type = 'text/javascript';
+        script.src = 'http://maps.googleapis.com/maps/api/js?callback=googlemapsloaded&libraries=places'+key;
         s = document.getElementsByTagName('script')[0];
         s.parentNode.insertBefore(script, s);
         this.initSemanticMaps();
@@ -263,11 +263,11 @@ export default class SemanticMaps extends Component {
         }
 
         if (element.attachEvent) {
-            element.attachEvent("on" + type, callback);
+            element.attachEvent('on' + type, callback);
             return;
         }
 
-        element["on"+type] = callback;
+        element['on'+type] = callback;
     }
 
     render() {

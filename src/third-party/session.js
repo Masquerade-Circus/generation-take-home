@@ -8,7 +8,7 @@ let sessionManager = function (t,e,n,a) {
     };return i.data = t.getItem(e) ? JSON.parse(t.getItem(e)) : a || {},i.s = function () {
         t.setItem(e, JSON.stringify(i.data))
     },i.f = function (t,e) {
-        for (var a,r,f = t.split(n),o = i.data; f.length > 1;)r = f.shift(),(void 0 == o[r] || "object" != typeof o[r]) && (o[r] = {}),o = o[r];return a = f.shift(),void 0 === e ? o[a] : (null === e ? delete o[a] : o[a] = e,i.s(),i)
+        for (var a,r,f = t.split(n),o = i.data; f.length > 1;)r = f.shift(),(void 0 == o[r] || 'object' != typeof o[r]) && (o[r] = {}),o = o[r];return a = f.shift(),void 0 === e ? o[a] : (null === e ? delete o[a] : o[a] = e,i.s(),i)
     },i
 };
 
